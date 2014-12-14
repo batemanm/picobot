@@ -9,7 +9,6 @@
 *
 * TODO 
 *   - include PWM support for the motors
-*   - 
 */
 #include <NewPing.h>
 #include <Thread.h>
