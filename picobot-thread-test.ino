@@ -278,7 +278,7 @@ void ledOff()
 }
 
 // Run the sensor and movement threads if we need to
-void seviceThreads () {
+void serviceThreads () {
   if (sensorCheck.shouldRun ()) {
     sensorCheck.run ();
   }
