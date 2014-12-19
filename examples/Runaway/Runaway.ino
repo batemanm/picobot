@@ -14,10 +14,9 @@ PicoBot picobot = PicoBot ();
 void setup (){}
 
 void loop (){
-  // deal with moving/sensors
-  picobot.serviceThreads ();
-
-  // this is our robot's behaviour
+  // If there is an object with 10 CM
+  // randomly turn left or right for a random 
+  // amount of time (between 0 and 1000 ms)
   if (picobot.getDistance () < 10) {
     int dir = random (1000);
     int time = random (1000);
@@ -27,8 +26,9 @@ void loop (){
       picobot.turnLeft (time, 255, 255);
     }
   } else {
-    if (picobot.finishedMovement ()) {
-      picobot.forward (10, 255); // move forward
+    // If there is nothing with 10 CM
+    if (picobot.finishedMovement ()) { // and we have finished our last movement
+      picobot.forward (10, 255); // then move forward
       picobot.interruptible (); // but we can turn if we need to
     }
   }
