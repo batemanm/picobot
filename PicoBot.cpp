@@ -30,7 +30,8 @@ PicoBot::PicoBot (){
   TCCR1B = (1 << WGM12);
   TCCR1B |= (1 << CS12) | (1 << CS10);
   TIMSK1 |= (1 << OCIE1A);
-  OCR1A = 1000; // work out a better freq later
+  // FIXME - this was eyeballed - need to calculate it later.
+  OCR1A = 1000;
   sei ();
 }
 
@@ -235,17 +236,26 @@ void PicoBot::wait () {
   }
 }
 
+// read the left LDR 
+int PicoBot::getLeftLDR () {
+  return analogRead (LEFT_LDR_PIN);
+}
+
+// read the left LDR 
+int PicoBot::getRightLDR () {
+  return analogRead (RIGHT_LDR_PIN);
+}
 
 // Update our movement using an timer interrupt
 PicoBot piobot;
 ISR (TIMER1_COMPA_vect) {
-  picobot.ledOn ();
   unsigned long now = millis ();
   if (picobot.lastTimeMovement < now) {
     if ((now - picobot.lastTimeMovement) > 10) {
       picobot.performMovement ();
       picobot.lastTimeMovement = now;
     }
-  } else { picobot.lastTimeMovement = now;}
-  picobot.ledOff ();
+  } else { 
+    picobot.lastTimeMovement = now;
+  }
 }
