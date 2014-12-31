@@ -1,12 +1,19 @@
 #include <PicoBot.h>
 
+Net PicoBot::getNetwork () {
+  return net;
+}
 
-// Initialise the robot
 PicoBot::PicoBot (){
 // Setup the hardware
   pinMode(LEFT_LDR_PIN, INPUT_PULLUP);
   pinMode(RIGHT_LDR_PIN, INPUT_PULLUP);
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(FRONT_LED_PIN, OUTPUT);
+  pinMode(REAR_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(BLUE_LED_PIN, OUTPUT);
+
 
   pinMode (MOTOR1A_PIN, OUTPUT);
   pinMode (MOTOR1B_PIN, OUTPUT);
@@ -19,10 +26,13 @@ PicoBot::PicoBot (){
 
   // start the random number generator
   // should really increase the the entropy with this
-  randomSeed(analogRead (LEFT_LDR_PIN));
+  randomSeed(0);
   memset (&movement, 0, sizeof (struct movementDesc));
+  movement.ttr = -1;
   long lastTimeSensor = 0;
   long lastTimeMovement = 0;
+
+  frontLEDOff ();
 
 // Register a timer to deal with the movements
   cli ();
@@ -35,8 +45,6 @@ PicoBot::PicoBot (){
   sei ();
 }
 
-
-// Allow movements to be stopped and changed
 void PicoBot::interruptible () {
   cli ();
   movement.flags = movement.flags & ~LOCKED;
@@ -44,8 +52,6 @@ void PicoBot::interruptible () {
 }
 
 
-// turn motors off and reset the struct
-// I'll get round to writing this
 void PicoBot::halt (){
   cli ();
   movement.ttr = 0;
@@ -53,10 +59,6 @@ void PicoBot::halt (){
   sei ();
 }
 
-
-// move forward for a given time and power
-// ttr - time to run for this movement
-// power - the speed of this movement
 void PicoBot::forward (int ttr, byte power){
   cli ();
   if (!(movement.flags & LOCKED)) {
@@ -71,9 +73,6 @@ void PicoBot::forward (int ttr, byte power){
   sei ();
 }
 
-// move backwards for a given time and power
-// ttr - time to run of this movement
-// power - the speed of this movement
 void PicoBot::back (int ttr, byte power){
   cli ();
   lastTime = millis ();
@@ -86,12 +85,6 @@ void PicoBot::back (int ttr, byte power){
   sei ();
 }
 
-// Describe the turn of the robot
-// ttr - time to run this movement
-// leftPower - the speed of the left motor
-// rightPower - the speed of the right motor
-// leftDirection - 1 is forward, 0 is backwards
-// rightDirection - 1 is forward, 0 is backwards
 void PicoBot::turn (int ttr, byte leftPower, byte rightPower, int leftDirection, int rightDirection) {
   cli ();
   if (!(movement.flags & LOCKED)) {
@@ -116,32 +109,14 @@ void PicoBot::turn (int ttr, byte leftPower, byte rightPower, int leftDirection,
 }
 
 
-// Describe a left turn on the spot
-// ttr - how long to run this turn for
-// leftPower - the speed of the left motor
-// rightPower - the speed of the right motor
 void PicoBot::turnLeft (int ttr, byte leftPower, byte rightPower) {
   turn (ttr, leftPower, rightPower, 0, 1);
 }
 
-// Describe a right turn on the spot
-// ttr - how long to run this turn for
-// leftPower - the speed of the left motor
-// rightPower - the speed of the right motor
 void PicoBot::turnRight (int ttr, byte leftPower, byte rightPower) {
   turn (ttr, leftPower, rightPower, 1, 0);
 }
 
-
-
-// Performs the movement described in movement
-// NOTES
-//   * currently this only runs the motors at full speed.
-//   * it may run the motors for too long
-//
-// TODO
-//   * add software PWM for backwards
-//
 void PicoBot::performMovement (){
   int MOTOR1A = LOW;
   int MOTOR1B = LOW;
@@ -177,20 +152,27 @@ void PicoBot::performMovement (){
   } else {
     digitalWrite(MOTOR1B_PIN, MOTOR1B);
   }
-  digitalWrite(MOTOR1A_PIN, MOTOR1A);
+  if (MOTOR1A == HIGH) {
+    analogWrite (MOTOR1A_PIN, movement.leftMotor);
+  } else {
+    digitalWrite(MOTOR1A_PIN, MOTOR1A);
+  }
 
   if (MOTOR2B == HIGH) {
     analogWrite (MOTOR2B_PIN, movement.rightMotor);
   } else {
     digitalWrite(MOTOR2B_PIN, MOTOR2B);
   }
-  digitalWrite(MOTOR2A_PIN, MOTOR2A);
+  if (MOTOR2A == HIGH) {
+    analogWrite (MOTOR2A_PIN, movement.rightMotor);
+  } else {
+    digitalWrite(MOTOR2A_PIN, MOTOR2A);
+  }
   if (movement.ttr <= 0 ){ // unlock the movement since we've finished moving
     movement.flags = movement.flags & ~LOCKED;
   }
 }
 
-// get the distance in cm
 unsigned int PicoBot::getDistance () {
   digitalWrite(TRIGGER_PIN, LOW);
   delayMicroseconds(2);
@@ -201,12 +183,9 @@ unsigned int PicoBot::getDistance () {
   long duration = pulseIn(ECHO_PIN, HIGH);
 
   unsigned int distance = duration / 29 / 2;
-
   return distance;
 }
 
-// Have we finished moving?
-// Returns true if we are not moving
 boolean PicoBot::finishedMovement () {
   boolean result = 0;
   if (movement.ttr > 0) {
@@ -217,45 +196,72 @@ boolean PicoBot::finishedMovement () {
   return result;
 }
 
-
-// turns the LED on pin 13 on
-void PicoBot::ledOn() {
-  digitalWrite(LED_PIN, HIGH);
+void PicoBot::frontLEDOn() {
+  digitalWrite(FRONT_LED_PIN, HIGH);
 }
 
-// turns the LED on pin 13 off
-void PicoBot::ledOff() {
-  digitalWrite(LED_PIN, LOW);
+void PicoBot::frontLEDOff() {
+  digitalWrite(FRONT_LED_PIN, LOW);
 }
 
+void PicoBot::rearLEDOn() {
+  digitalWrite(REAR_LED_PIN, HIGH);
+}
 
-// Wait until we have finished moving
+void PicoBot::rearLEDOn(byte value) {
+  analogWrite(REAR_LED_PIN, value);
+}
+
+void PicoBot::rearLEDOff() {
+  digitalWrite(REAR_LED_PIN, LOW);
+}
+
 void PicoBot::wait () {
   while (movement.ttr > 0) {
     delay (1);
   }
 }
 
-// read the left LDR 
 int PicoBot::getLeftLDR () {
   return analogRead (LEFT_LDR_PIN);
 }
 
-// read the left LDR 
 int PicoBot::getRightLDR () {
   return analogRead (RIGHT_LDR_PIN);
 }
 
-// Update our movement using an timer interrupt
-PicoBot piobot;
+void PicoBot::setLEDColour (byte red, byte green, byte blue) {
+  analogWrite (RED_LED_PIN, red);
+  analogWrite (GREEN_LED_PIN, green);
+  analogWrite (BLUE_LED_PIN, blue);
+}
+
+//extern RF24 _nrf24l01radio;
+void PicoBot::startNetworking (char *networkAddress, void (*callback)(Net *frame)) {
+  byte netAddress[4];
+// correct the byte ordering.
+  netAddress[0] = (byte)networkAddress[3];
+  netAddress[1] = (byte)networkAddress[2];
+  netAddress[2] = (byte)networkAddress[1];
+  netAddress[3] = (byte)networkAddress[0];
+
+  net.setup (netAddress, callback);
+}
+
+void PicoBot::updateComms () {
+  net.updateComms ();
+}
+
+PicoBot Picobot = PicoBot ();
 ISR (TIMER1_COMPA_vect) {
   unsigned long now = millis ();
-  if (picobot.lastTimeMovement < now) {
-    if ((now - picobot.lastTimeMovement) > 10) {
-      picobot.performMovement ();
-      picobot.lastTimeMovement = now;
+  if (Picobot.lastTimeMovement < now) {
+    if ((now - Picobot.lastTimeMovement) > 10) {
+      Picobot.performMovement ();
+      Picobot.lastTimeMovement = now;
     }
   } else { 
-    picobot.lastTimeMovement = now;
+    Picobot.lastTimeMovement = now;
   }
 }
+
