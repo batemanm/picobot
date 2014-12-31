@@ -95,12 +95,12 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 //  getRadio ().enableDynamicPayloads ();
   getRadio ().setPayloadSize(32);
 
-//  memcpy (netbroadcast+1, netAddress, 4);
+  memcpy (netbroadcast+1, netAddress, 4);
   netbroadcast[0] = 0;
-  netbroadcast[1] = 0;
-  netbroadcast[2] = 0;
-  netbroadcast[3] = 0;
-  netbroadcast[4] = 0;
+//  netbroadcast[1] = 0;
+//  netbroadcast[2] = 0;
+//  netbroadcast[3] = 0;
+//  netbroadcast[4] = 0;
 
 //  getRadio ().openReadingPipe(1,netbroadcast);
 // don't acknowledge the network broadcast address
@@ -108,7 +108,7 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 // acknowledgements.
 
 // for some reason the writing pipe need auto ack turned on.
-getRadio ().setAutoAck (0);
+  getRadio ().setAutoAck (0);
   getRadio ().enableDynamicAck ();
 //  getRadio ().setAutoAck(0, 1);
 
