@@ -19,8 +19,8 @@ PicoBot.h - Library to control a 4tronix PicoBot
 
 #define MOTOR1A_PIN 2
 #define MOTOR1B_PIN 3
-#define MOTOR2A_PIN 4
-#define MOTOR2B_PIN 5
+#define MOTOR2A_PIN 5
+#define MOTOR2B_PIN 4
 
 #define FRONT_LED_PIN 13
 #define REAR_LED_PIN 6
@@ -31,6 +31,8 @@ PicoBot.h - Library to control a 4tronix PicoBot
 #define LEFT_MOTOR_FORWARD (1 << 0)
 #define RIGHT_MOTOR_FORWARD (1 << 1)
 #define LOCKED (1 << 2)
+#define FLASH_REAR_LED (1 << 3)
+#define FLASH_REAR_LED_STATE (1 << 4)
 
 #ifdef __cplusplus
 
@@ -51,16 +53,20 @@ private:
     // Number of ms we should maintain this speed and direction
     // this will be decremented each time round the loop movement service loop
     int ttr;
+    // Flash time. This is how long the LED will be on for then off for
+    int flashTime;
+    // Current time to run for the LED state
+    int ledStateTtr;
   };
   // The last time we looked at movement of the robot
   long lastTimeMovement;
   long lastTime;
   Net net;
+  struct movementDesc movement;
 
   // Described what we are currently doing
   // FIXME 
   //   * consider if this is better as a struct or as instance members
-  struct movementDesc movement;
 
   void turn (int ttr, byte leftPower, byte rightPower, int leftDirection, int rightDirection);
   void performMovement ();
@@ -86,6 +92,7 @@ public:
   void rearLEDOn();
   void rearLEDOn(byte value);
   void rearLEDOff();
+  void flashRearLED (int ttr);
   void setLEDColour (byte red, byte green, byte blue);
   friend void TIMER1_COMPA_vect ();
 };

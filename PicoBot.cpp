@@ -51,10 +51,10 @@ void PicoBot::interruptible () {
   sei ();
 }
 
-
+// stops the flashing too
 void PicoBot::halt (){
   cli ();
-  movement.ttr = 0;
+//  movement.flags = movement.flags & ~FLASH_REAR_LED;
   movement.flags = 0;
   sei ();
 }
@@ -122,6 +122,9 @@ void PicoBot::performMovement (){
   int MOTOR1B = LOW;
   int MOTOR2A = LOW;
   int MOTOR2B = LOW;
+  long currentTime = millis ();
+  long difference = currentTime - lastTime;
+  lastTime = currentTime;
   if (movement.ttr >= 0) {
     if (movement.flags & LEFT_MOTOR_FORWARD){
       MOTOR1A = LOW;
@@ -137,13 +140,10 @@ void PicoBot::performMovement (){
       MOTOR2A = HIGH;
       MOTOR2B = LOW;
     }
-
-    long currentTime = millis ();
-    long difference = currentTime - lastTime;
     movement.ttr = movement.ttr - difference;
     lastTime = currentTime;
   }
-  if (movement.ttr <= 0 ){ // unlock the movement since we've finished moving
+  if (movement.ttr <= 0){ // unlock the movement since we've finished moving
     movement.flags = movement.flags & ~LOCKED;
   }
   // Hardware PWM
@@ -168,9 +168,30 @@ void PicoBot::performMovement (){
   } else {
     digitalWrite(MOTOR2A_PIN, MOTOR2A);
   }
-  if (movement.ttr <= 0 ){ // unlock the movement since we've finished moving
-    movement.flags = movement.flags & ~LOCKED;
+
+// flash the rear LED
+  if (movement.flags & FLASH_REAR_LED) {
+    if (movement.ledStateTtr <= 0) {
+      movement.ledStateTtr = movement.flashTime;
+      if (movement.flags & FLASH_REAR_LED_STATE) {
+        movement.flags = movement.flags & ~FLASH_REAR_LED_STATE;
+        rearLEDOff ();
+      } else {
+        movement.flags = movement.flags | FLASH_REAR_LED_STATE;
+        rearLEDOn ();
+      }
+    } else {
+      movement.ledStateTtr = movement.ledStateTtr - difference;
+    }
   }
+}
+
+void PicoBot::flashRearLED (int ttr) {
+  cli ();
+  movement.flags = movement.flags | FLASH_REAR_LED;
+  movement.ledStateTtr = ttr;
+  movement.flashTime = ttr;
+  sei ();
 }
 
 unsigned int PicoBot::getDistance () {
@@ -212,7 +233,11 @@ void PicoBot::rearLEDOn(byte value) {
   analogWrite(REAR_LED_PIN, value);
 }
 
+// turns off the rear led from flashing/constant on
 void PicoBot::rearLEDOff() {
+  cli ();
+//  movement.flashTime = 0;
+  sei ();
   digitalWrite(REAR_LED_PIN, LOW);
 }
 
@@ -255,13 +280,13 @@ void PicoBot::updateComms () {
 PicoBot Picobot = PicoBot ();
 ISR (TIMER1_COMPA_vect) {
   unsigned long now = millis ();
-  if (Picobot.lastTimeMovement < now) {
-    if ((now - Picobot.lastTimeMovement) > 10) {
+//  if (Picobot.lastTimeMovement < now) {
+//    if ((now - Picobot.lastTimeMovement) > 10) {
       Picobot.performMovement ();
       Picobot.lastTimeMovement = now;
-    }
-  } else { 
-    Picobot.lastTimeMovement = now;
-  }
+//    }
+//  } else { 
+//    Picobot.lastTimeMovement = now;
+//  }
 }
 
