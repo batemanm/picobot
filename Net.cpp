@@ -80,7 +80,7 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 //  println (0);
 
   memcpy (netAddr, netAddress, 4);
-  memcpy (hostAddr, netAddress, 4);
+  memcpy (hostAddr+1, netAddress, 4);
 
   frameReceived = netCallback;
 
@@ -95,12 +95,12 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 //  getRadio ().enableDynamicPayloads ();
   getRadio ().setPayloadSize(32);
 
-  memcpy (netbroadcast+1, netAddress, 4);
+//  memcpy (netbroadcast+1, netAddress, 4);
   netbroadcast[0] = 0;
-//  netbroadcast[1] = 0;
-//  netbroadcast[2] = 0;
-//  netbroadcast[3] = 0;
-//  netbroadcast[4] = 0;
+  netbroadcast[1] = 0;
+  netbroadcast[2] = 0;
+  netbroadcast[3] = 0;
+  netbroadcast[4] = 0;
 
 //  getRadio ().openReadingPipe(1,netbroadcast);
 // don't acknowledge the network broadcast address
@@ -108,15 +108,15 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 // acknowledgements.
 
 // for some reason the writing pipe need auto ack turned on.
-  getRadio ().setAutoAck (0);
+  getRadio ().setAutoAck (1);
   getRadio ().enableDynamicAck ();
 //  getRadio ().setAutoAck(0, 1);
 
 // listen on the broadcast pipe
   getRadio ().openReadingPipe(1,netbroadcast);
   getRadio ().openWritingPipe(netbroadcast);
-  getRadio ().setAutoAck(1, 0);
-  getRadio ().setAutoAck(0, 0);
+//  getRadio ().setAutoAck(1, 0);
+//  getRadio ().setAutoAck(0, 0);
 
 // This will be our host address
 // we should use the Duplication Address Detection system
@@ -159,14 +159,50 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
   } while (addrInUse == 1);
 
   hostAddress = proposedHostAddress;
-  hostAddr[0] = proposedHostAddress;
+  hostAddr[0] = hostAddress;
+  getRadio ().stopListening ();
   getRadio ().openReadingPipe(2,hostAddr);
-
-  getRadio ().setAutoAck(2, 1);
+//  getRadio ().setAutoAck(2, 1);
 
 // reset the radio
-  getRadio ().stopListening ();
   getRadio ().startListening ();
+}
+
+void Net::handleIncomingFrame () {
+    int port = getPort ();
+    switch (port) {
+      case 0: // call the user callback
+          frameReceived (this);
+        break;
+      case PORT_DAD: // Duplicate address detection
+          frameReceived (this);
+          if (netData.destination == 0) { // only take part if it was sent to the network broadcast address
+            struct duplicateAddressDetection dad;
+            memcpy (&dad, getData (), sizeof (dad));
+            switch (dad.flags) {
+              case DAD_REQUEST: // Am I using the same address as the proposed
+                if (hostAddress == dad.requestAddress) {
+                  // we are using the proposed address
+                  struct duplicateAddressDetection rdad;
+                  rdad.requestAddress = hostAddress;
+                  rdad.flags = DAD_ADDR_INUSE;
+                  write (getSourceAddress (), &rdad, sizeof (rdad), PORT_DAD);
+                break;
+              case DAD_PING_REQUEST:
+                  struct duplicateAddressDetection ping;
+                  ping.requestAddress = 0;
+                  ping.flags = DAD_PING_RESPONSE;
+                 write (getSourceAddress (), &ping, sizeof (ping), PORT_DAD);
+		break;
+              default:
+                break;
+              }
+            }
+          }
+        break;
+      default: // no idea what to do this this packet.
+        break;
+     }
 }
 
 void Net::updateComms () {
@@ -175,29 +211,7 @@ void Net::updateComms () {
 //    int dataSize = getRadio ().getDynamicPayloadSize ();
       getRadio ().read (&netData, 32);
 // Dynamic payload didn't work network data is always 32 bytes.
-
-    int port = getPort ();
-    switch (port) {
-      case 0: // call the user callback
-          frameReceived (this);
-        break;
-      case PORT_DAD: // Duplicate address detection
-          if (netData.destination == 0) { // only take part if it was sent to the network broadcast address
-            struct duplicateAddressDetection dad;
-            memcpy (&dad, getData (), sizeof (dad));
-            if (hostAddress == dad.requestAddress) {
-              // we are using the proposed address
-              struct duplicateAddressDetection rdad;
-              rdad.requestAddress = hostAddress;
-              rdad.flags = DAD_ADDR_INUSE;
-
-              write (getSourceAddress (), &rdad, sizeof (rdad), PORT_DAD);
-            }
-          }
-        break;
-      default: // no idea what to do this this packet.
-        break;
-     }
+    handleIncomingFrame ();
 
   }
 }
@@ -233,13 +247,20 @@ int Net::write (byte destination[5], void *data, int size, int port) {
   memcpy (nf.data, data, s);
 
   getRadio ().stopListening ();
-  getRadio ().openWritingPipe (destination);
-  getRadio ().setAutoAck (1);
+//  getRadio ().openWritingPipe (destination);
+//  getRadio ().setAutoAck (1);
   result = getRadio ().write (&nf, sizeof (nf));
   getRadio ().startListening ();
   return result;
 }
 
-byte Net::getMyAddress () {
-  return hostAddress;
+byte *Net::getMyAddress () {
+  return &hostAddress;
+}
+
+void Net::ping (byte *dest, byte *addresses[5], int length) {
+  struct duplicateAddressDetection ping;
+  ping.requestAddress = 0;
+  ping.flags = DAD_PING_REQUEST;
+  write (getSourceAddress (), &ping, sizeof (ping), PORT_DAD);
 }

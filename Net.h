@@ -3,8 +3,6 @@
 
 #include <Arduino.h>
 
-#include "SPI.h"
-#include "nRF24L01.h"
 #include "RF24.h"
 
 #define NRF24L01_CE_PIN 8
@@ -20,6 +18,9 @@
 
 #define DAD_REQUEST (1)
 #define DAD_ADDR_INUSE (1 << 1)
+#define DAD_PING_REQUEST (1 << 2)
+#define DAD_PING_RESPONSE (1 << 3)
+
 
 #define PORT_USER 0
 #define PORT_DAD 1
@@ -40,6 +41,7 @@ class Net {
     int getPort ();
     int getVersion ();
     int write (byte destination[5], void *data, int size, int port);
+    void handleIncomingFrame ();
 
   public:
 //    int packets;
@@ -53,13 +55,14 @@ class Net {
     byte destinationAddress[5];
     byte* getSourceAddress ();
     byte* getDestinationAddress ();
-    byte getMyAddress ();
+    byte* getMyAddress ();
     void getBroadcast (byte *broadcast);
     void* getData ();
     void setup (byte netAddress[4], void (*callback)(Net *frame));
     int getDataSize ();
     void updateComms ();
     int write (byte destination[5], void *data, int size);
+    void ping (byte *dest, byte *addresses[5], int length);
     void (*println) (char *);
 };
 

@@ -94,6 +94,7 @@ public:
   void rearLEDOff();
   void flashRearLED (int ttr);
   void setLEDColour (byte red, byte green, byte blue);
+  void ping (byte *dest, byte *addresses[5], int length);
   friend void TIMER1_COMPA_vect ();
 };
 

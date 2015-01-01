@@ -175,10 +175,10 @@ void PicoBot::performMovement (){
       movement.ledStateTtr = movement.flashTime;
       if (movement.flags & FLASH_REAR_LED_STATE) {
         movement.flags = movement.flags & ~FLASH_REAR_LED_STATE;
-        rearLEDOff ();
+        digitalWrite(REAR_LED_PIN, LOW);
       } else {
         movement.flags = movement.flags | FLASH_REAR_LED_STATE;
-        rearLEDOn ();
+        digitalWrite(REAR_LED_PIN, HIGH);
       }
     } else {
       movement.ledStateTtr = movement.ledStateTtr - difference;
@@ -236,7 +236,8 @@ void PicoBot::rearLEDOn(byte value) {
 // turns off the rear led from flashing/constant on
 void PicoBot::rearLEDOff() {
   cli ();
-//  movement.flashTime = 0;
+  movement.flashTime = 0;
+  movement.flags = movement.flags & ~FLASH_REAR_LED;
   sei ();
   digitalWrite(REAR_LED_PIN, LOW);
 }
@@ -275,6 +276,10 @@ void PicoBot::startNetworking (char *networkAddress, void (*callback)(Net *frame
 
 void PicoBot::updateComms () {
   net.updateComms ();
+}
+
+void PicoBot::ping (byte *destination, byte *responses[], int length) {
+  net.ping (destination, responses, length);
 }
 
 PicoBot Picobot = PicoBot ();
