@@ -80,13 +80,13 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 //  println (0);
 
   memcpy (netAddr, netAddress, 4);
-  memcpy (hostAddr+1, netAddress, 4);
+  memcpy (hostAddr, netAddress, 4);
 
   frameReceived = netCallback;
 
   getRadio ().begin();
   // hardcoded channel for each of use
-  getRadio ().setChannel(0x4c);
+  getRadio ().setChannel(0x0c);
   getRadio ().setRetries(15,15);
   getRadio ().setDataRate(RF24_250KBPS);
 
@@ -95,7 +95,7 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 //  getRadio ().enableDynamicPayloads ();
   getRadio ().setPayloadSize(32);
 
-//  memcpy (netbroadcast+1, netAddress, 4);
+  memcpy (netbroadcast, netAddress, 4);
   netbroadcast[0] = 0;
   netbroadcast[1] = 0;
   netbroadcast[2] = 0;
@@ -108,15 +108,24 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
 // acknowledgements.
 
 // for some reason the writing pipe need auto ack turned on.
-  getRadio ().setAutoAck (1);
-  getRadio ().enableDynamicAck ();
+//  getRadio ().setAutoAck (1);
+//  getRadio ().enableDynamicAck ();
 //  getRadio ().setAutoAck(0, 1);
 
 // listen on the broadcast pipe
-  getRadio ().openReadingPipe(1,netbroadcast);
   getRadio ().openWritingPipe(netbroadcast);
+  getRadio ().openReadingPipe(1,netbroadcast);
+
 //  getRadio ().setAutoAck(1, 0);
 //  getRadio ().setAutoAck(0, 0);
+
+  hostAddr[0] = 20;
+  hostAddr[1] = 20;
+  hostAddr[2] = 20;
+  hostAddr[3] = 20;
+  hostAddr[4] = 20;
+  getRadio ().openReadingPipe(2,hostAddr);
+
 
 // This will be our host address
 // we should use the Duplication Address Detection system
@@ -159,9 +168,15 @@ void Net::setup (byte netAddress[4], void (*netCallback)(Net *frame)){
   } while (addrInUse == 1);
 
   hostAddress = proposedHostAddress;
-  hostAddr[0] = hostAddress;
+/*
+  hostAddr[0] = 0;
+  hostAddr[1] = 0;
+  hostAddr[2] = 0;
+  hostAddr[3] = 0;
+  hostAddr[4] = 20;
   getRadio ().stopListening ();
   getRadio ().openReadingPipe(2,hostAddr);
+*/
 //  getRadio ().setAutoAck(2, 1);
 
 // reset the radio

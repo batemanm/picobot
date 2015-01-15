@@ -13,6 +13,9 @@ PicoBot.h - Library to control a 4tronix PicoBot
 #define LEFT_LDR_PIN A0
 #define RIGHT_LDR_PIN A1
 
+#define LEFT_LINE_PIN A6
+#define RIGHT_LINE_PIN A7
+
 #define TRIGGER_PIN  A4
 #define ECHO_PIN     A5
 #define MAX_DISTANCE 200 // furthest distance for the ping sensor - FIXME this is a guess right now
@@ -58,6 +61,8 @@ private:
     // Current time to run for the LED state
     int ledStateTtr;
   };
+  // Line level
+  int lineLevel;
   // The last time we looked at movement of the robot
   long lastTimeMovement;
   long lastTime;
@@ -95,6 +100,9 @@ public:
   void flashRearLED (int ttr);
   void setLEDColour (byte red, byte green, byte blue);
   void ping (byte *dest, byte *addresses[5], int length);
+  void setLineLevel (int level);
+  int leftLine ();
+  int rightLine ();
   friend void TIMER1_COMPA_vect ();
 };
 

@@ -34,6 +34,8 @@ PicoBot::PicoBot (){
 
   frontLEDOff ();
 
+  lineLevel = 400;
+
 // Register a timer to deal with the movements
   cli ();
   TCCR1A = 0;
@@ -281,6 +283,18 @@ void PicoBot::updateComms () {
 void PicoBot::ping (byte *destination, byte *responses[], int length) {
   net.ping (destination, responses, length);
 }
+
+void PicoBot::setLineLevel (int level) {
+  lineLevel = level;
+}
+
+int PicoBot::leftLine () {
+  return (analogRead (LEFT_LINE_PIN) < lineLevel);
+}
+int PicoBot::rightLine () {
+  return (analogRead (RIGHT_LINE_PIN) < lineLevel);
+}
+
 
 PicoBot Picobot = PicoBot ();
 ISR (TIMER1_COMPA_vect) {
