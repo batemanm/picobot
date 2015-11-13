@@ -1,19 +1,22 @@
 #include <PicoBot.h>
 
+#ifdef PICOBOT1
 Net PicoBot::getNetwork () {
   return net;
 }
+#endif
 
 PicoBot::PicoBot (){
 // Setup the hardware
   pinMode(LEFT_LDR_PIN, INPUT_PULLUP);
   pinMode(RIGHT_LDR_PIN, INPUT_PULLUP);
   pinMode(FRONT_LED_PIN, OUTPUT);
+#ifdef PICOBOT1
   pinMode(REAR_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(BLUE_LED_PIN, OUTPUT);
-
+#endif
 
   pinMode (MOTOR1A_PIN, OUTPUT);
   pinMode (MOTOR1B_PIN, OUTPUT);
@@ -172,6 +175,7 @@ void PicoBot::performMovement (){
   }
 
 // flash the rear LED
+#ifdef PICOBOT1
   if (movement.flags & FLASH_REAR_LED) {
     if (movement.ledStateTtr <= 0) {
       movement.ledStateTtr = movement.flashTime;
@@ -186,8 +190,10 @@ void PicoBot::performMovement (){
       movement.ledStateTtr = movement.ledStateTtr - difference;
     }
   }
+#endif
 }
 
+#ifdef PICOBOT1
 void PicoBot::flashRearLED (int ttr) {
   cli ();
   movement.flags = movement.flags | FLASH_REAR_LED;
@@ -195,6 +201,7 @@ void PicoBot::flashRearLED (int ttr) {
   movement.flashTime = ttr;
   sei ();
 }
+#endif
 
 unsigned int PicoBot::getDistance () {
   digitalWrite(TRIGGER_PIN, LOW);
@@ -227,6 +234,7 @@ void PicoBot::frontLEDOff() {
   digitalWrite(FRONT_LED_PIN, LOW);
 }
 
+#ifdef PICOBOT1
 void PicoBot::rearLEDOn() {
   digitalWrite(REAR_LED_PIN, HIGH);
 }
@@ -243,6 +251,7 @@ void PicoBot::rearLEDOff() {
   sei ();
   digitalWrite(REAR_LED_PIN, LOW);
 }
+#endif
 
 void PicoBot::wait () {
   while (movement.ttr > 0) {
@@ -258,6 +267,7 @@ int PicoBot::getRightLDR () {
   return analogRead (RIGHT_LDR_PIN);
 }
 
+#ifdef PICOBOT1
 void PicoBot::setLEDColour (byte red, byte green, byte blue) {
   analogWrite (RED_LED_PIN, red);
   analogWrite (GREEN_LED_PIN, green);
@@ -283,6 +293,7 @@ void PicoBot::updateComms () {
 void PicoBot::ping (byte *destination, byte *responses[], int length) {
   net.ping (destination, responses, length);
 }
+#endif
 
 void PicoBot::setLineLevel (int level) {
   lineLevel = level;

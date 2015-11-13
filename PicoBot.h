@@ -7,8 +7,12 @@ PicoBot.h - Library to control a 4tronix PicoBot
 #ifndef PICOBOT_H
 #define PICOBOT_H
 
+#define PICOBOT2 1
+
 #include <Arduino.h>
+#ifdef PICOBOT1
 #include "Net.h"
+#endif
 
 #define LEFT_LDR_PIN A0
 #define RIGHT_LDR_PIN A1
@@ -20,16 +24,34 @@ PicoBot.h - Library to control a 4tronix PicoBot
 #define ECHO_PIN     A5
 #define MAX_DISTANCE 200 // furthest distance for the ping sensor - FIXME this is a guess right now
 
+// PicoBot 1 definitions
+#ifdef PICOBOT1
 #define MOTOR1A_PIN 2
 #define MOTOR1B_PIN 3
 #define MOTOR2A_PIN 5
 #define MOTOR2B_PIN 4
 
-#define FRONT_LED_PIN 13
 #define REAR_LED_PIN 6
 #define RED_LED_PIN 9
 #define GREEN_LED_PIN A2
 #define BLUE_LED_PIN A3
+
+#endif
+
+// PicoBot 2 definitions
+#ifdef PICOBOT2
+#define MOTOR1A_PIN 6
+#define MOTOR1B_PIN 7
+#define MOTOR2A_PIN 5
+#define MOTOR2B_PIN 4
+
+#define DATA_RGBLED 9
+#define NUM_RGBLED 2
+
+#endif
+
+
+#define FRONT_LED_PIN 13
 
 #define LEFT_MOTOR_FORWARD (1 << 0)
 #define RIGHT_MOTOR_FORWARD (1 << 1)
@@ -66,18 +88,21 @@ private:
   // The last time we looked at movement of the robot
   long lastTimeMovement;
   long lastTime;
+#ifdef PICOBOT1
   Net net;
+#endif
   struct movementDesc movement;
 
   // Described what we are currently doing
   // FIXME 
   //   * consider if this is better as a struct or as instance members
 
-  void turn (int ttr, byte leftPower, byte rightPower, int leftDirection, int rightDirection);
   void performMovement ();
 
 public:
   PicoBot ();
+  void turn (int ttr, byte leftPower, byte rightPower, int leftDirection, int rightDirection);
+
   void interruptible ();
   void forward (int ttr, byte power);
   void halt ();
@@ -91,6 +116,7 @@ public:
   unsigned int getDistance ();
   int getLeftLDR ();
   int getRightLDR ();
+#ifdef PICOBOT1
   void startNetworking (char *networkAddress, void (*callback)(Net *frame));
   Net getNetwork ();
   void updateComms ();
@@ -100,6 +126,7 @@ public:
   void flashRearLED (int ttr);
   void setLEDColour (byte red, byte green, byte blue);
   void ping (byte *dest, byte *addresses[5], int length);
+#endif
   void setLineLevel (int level);
   int leftLine ();
   int rightLine ();
