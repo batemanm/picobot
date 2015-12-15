@@ -116,6 +116,7 @@ public:
   unsigned int getDistance ();
   int getLeftLDR ();
   int getRightLDR ();
+  long rawBatteryLevel ();
 #ifdef PICOBOT1
   void startNetworking (char *networkAddress, void (*callback)(Net *frame));
   Net getNetwork ();
